@@ -20,3 +20,10 @@ provider "aws" {
     }
   }
 }
+
+module "knowledge-base" {
+  source = "../../modules/knowledge-base"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
