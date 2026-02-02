@@ -1,0 +1,10 @@
+# .mise.toml - プロジェクトのツールバージョン管理
+# ドキュメント: https://mise.jdx.dev/
+
+[tools]
+# Terraform 1.11+ (S3 native state locking のため必須)
+terraform = "1.11.4"
+
+[settings]
+# プロジェクトディレクトリに入ると自動でツールをインストール
+auto_install = true
