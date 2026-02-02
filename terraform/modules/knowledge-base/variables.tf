@@ -1,9 +1,3 @@
-variable "aws_region" {
-  description = "AWS region for resources"
-  type        = string
-  default     = "ap-northeast-1"
-}
-
 variable "project_name" {
   description = "Project name used as prefix for resource naming"
   type        = string
@@ -19,4 +13,10 @@ variable "environment" {
     condition     = contains(["poc", "stg", "prd"], var.environment)
     error_message = "Environment must be one of: dev, stg, prod."
   }
+}
+
+variable "embedding_model" {
+  description = "The model used to create vector embeddings for the knowledge base"
+  type        = string
+  default     = "amazon.titan-embed-text-v2:0"
 }
