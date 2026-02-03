@@ -28,3 +28,10 @@ module "knowledge-base" {
   environment     = var.environment
   embedding_model = "amazon.titan-embed-text-v2:0"
 }
+
+module "slack-bot" {
+  source = "../../modules/slack-bot"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
