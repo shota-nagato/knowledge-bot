@@ -87,7 +87,7 @@ resource "aws_iam_role_policy" "bedrock_kb" {
           "bedrock:InvokeModel"
         ]
         Resource = [
-          "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.embedding_model}"
+          "arn:aws:bedrock:${local.region}::foundation-model/${var.embedding_model}"
         ]
       }
     ]
