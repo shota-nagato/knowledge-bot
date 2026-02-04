@@ -1,0 +1,13 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/lambda/.venv/bin/python",
+  "editor.insertSpaces": true,
+  "[python]": {
+    "editor.tabSize": 4
+  },
+  "[terraform]": {
+    "editor.tabSize": 2
+  },
+  "[terraform-vars]": {
+    "editor.tabSize": 2
+  }
+}

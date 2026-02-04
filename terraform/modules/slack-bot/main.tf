@@ -63,3 +63,54 @@ resource "aws_sqs_queue" "events_dlq" {
   content_based_deduplication = true
   message_retention_seconds   = 1209600
 }
+
+# =============================================================================
+# Lambda - Receiver (即時応答 + SQS送信)
+# =============================================================================
+module "ack_lambda" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${local.prefix}-receiver"
+  description   = "Slack Events receiver - immediate ack and queue to SQS"
+  handler       = "handler.handler"
+  runtime       = "python3.13"
+  architectures = ["arm64"]
+  timeout       = 10
+  memory_size   = 256
+
+  source_path = [
+    {
+      path             = "${var.lambda_source_dir}/receiver"
+      pip_requirements = true
+      patterns = [
+        "!\\.venv/.*",
+        "!__pycache__/.*",
+        "!\\.pytest_cache/.*",
+      ]
+    }
+  ]
+
+  environment_variables = {
+    SQS_QUEUE_URL      = aws_sqs_queue.events.url
+    SIGNING_SECRET_ARN = aws_secretsmanager_secret.slack_signing_secret.arn
+  }
+
+  attach_policy_statements = true
+  policy_statements = {
+    sqs = {
+      effect    = "Allow"
+      actions   = ["sqs:SendMessage"]
+      resources = [aws_sqs_queue.events.arn]
+    }
+    secrets = {
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = [aws_secretsmanager_secret.slack_signing_secret.arn]
+    }
+  }
+
+  create_lambda_function_url = true
+  authorization_type         = "NONE"
+
+  cloudwatch_logs_retention_in_days = 14
+}
