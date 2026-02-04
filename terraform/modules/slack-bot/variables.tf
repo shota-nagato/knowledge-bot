@@ -26,3 +26,9 @@ variable "environment" {
 #   type        = string
 #   default     = ""
 # }
+
+variable "lambda_source_dir" {
+  description = "Path to lambda source directory"
+  type        = string
+  nullable    = false
+}

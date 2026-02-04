@@ -32,6 +32,7 @@ module "knowledge-base" {
 module "slack-bot" {
   source = "../../modules/slack-bot"
 
-  project_name = var.project_name
-  environment  = var.environment
+  project_name      = var.project_name
+  environment       = var.environment
+  lambda_source_dir = "${path.root}/../../../lambda"
 }
