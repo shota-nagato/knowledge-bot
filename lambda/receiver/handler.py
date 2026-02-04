@@ -2,9 +2,13 @@ import boto3
 import os
 import base64
 import json
+import logging
 
 from aws_secretsmanager_caching import SecretCache, SecretCacheConfig  # type: ignore[import-untyped]
 from slack_sdk.signature import SignatureVerifier
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 sqs = boto3.client("sqs")
 secrets = boto3.client("secretsmanager")
@@ -31,12 +35,16 @@ def verify_slack_signature(event):
 
 
 def handler(event, context):
+    logger.info(f"Received event: {json.dumps(event)}")
+
     headers = event.get("headers", {})
 
     if headers.get("x-slack-retry-num"):
+        logger.info("Skipping retry request")
         return {"statusCode": 200, "body": "ok"}
 
     if not verify_slack_signature(event):
+        logger.warning("Signature verification failed")
         return {"statusCode": 401, "body": "Invalid signature"}
 
     body_str = event.get("body") or "{}"
@@ -45,8 +53,10 @@ def handler(event, context):
 
     body = json.loads(body_str)
     event_type = body.get("type")
+    logger.info(f"Event type: {event_type}")
 
     if event_type == "url_verification":
+        logger.info("Handling url_verification")
         return {
             "statusCode": 200,
             "headers": {"Content-Type": "text/plain"},
@@ -55,11 +65,14 @@ def handler(event, context):
 
     if event_type == "event_callback":
         slack_event = body.get("event", {})
+        logger.info(f"Slack event: {json.dumps(slack_event)}")
 
         if slack_event.get("bot_id"):
+            logger.info("Skipping bot message")
             return {"statusCode": 200, "body": "ok"}
 
         event_id = body.get("event_id", "")
+        logger.info(f"Processing event_id: {event_id}")
 
         try:
             sqs.send_message(
@@ -74,6 +87,8 @@ def handler(event, context):
                 MessageGroupId="slack-events",
                 MessageDeduplicationId=event_id,
             )
+            logger.info(f"Message sent to SQS: {event_id}")
         except Exception as e:
-            print(f"SQS send error: {e}")
+            logger.error(f"SQS send error: {e}", exc_info=True)
+
     return {"statusCode": 200, "body": "ok"}
