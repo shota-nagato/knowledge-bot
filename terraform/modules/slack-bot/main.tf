@@ -103,8 +103,11 @@ module "ack_lambda" {
       resources = [aws_sqs_queue.events.arn]
     }
     secrets = {
-      effect    = "Allow"
-      actions   = ["secretsmanager:GetSecretValue"]
+      effect = "Allow"
+      actions = [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
+      ]
       resources = [aws_secretsmanager_secret.slack_signing_secret.arn]
     }
   }
