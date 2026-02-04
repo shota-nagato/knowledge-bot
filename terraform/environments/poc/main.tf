@@ -35,4 +35,5 @@ module "slack-bot" {
   project_name      = var.project_name
   environment       = var.environment
   lambda_source_dir = "${path.root}/../../../lambda"
+  knowledge_base_id = module.knowledge-base.knowledge_base_id
 }

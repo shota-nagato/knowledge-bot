@@ -8,6 +8,7 @@
 
 # Build outputs
 terraform/environments/*/.build/
+terraform/**/builds/
 
 # IDE
 .idea/

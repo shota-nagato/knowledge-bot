@@ -117,3 +117,83 @@ module "ack_lambda" {
 
   cloudwatch_logs_retention_in_days = 14
 }
+
+# =============================================================================
+# Lambda - Worker (Bedrock処理 + Slack返信)
+# =============================================================================
+module "worker_lambda" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "${local.prefix}-worker"
+  description   = "Process Slack events with Bedrock and reply"
+  handler       = "handler.handler"
+  runtime       = "python3.13"
+  architectures = ["arm64"]
+  timeout       = 180
+  memory_size   = 512
+
+  source_path = [
+    {
+      path             = "${var.lambda_source_dir}/worker"
+      pip_requirements = true
+      patterns = [
+        "!\\.venv/.*",
+        "!__pycache__/.*",
+        "!\\.pytest_cache/.*",
+      ]
+    }
+  ]
+
+  environment_variables = {
+    BOT_TOKEN_ARN     = aws_secretsmanager_secret.slack_bot_token.arn
+    KNOWLEDGE_BASE_ID = var.knowledge_base_id
+    MODEL_ARN         = var.model_arn
+  }
+
+  attach_policy_statements = true
+  policy_statements = {
+    secrets = {
+      effect = "Allow"
+      actions = [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
+      ]
+      resources = [aws_secretsmanager_secret.slack_bot_token.arn]
+    }
+    bedrock = {
+      effect = "Allow"
+      actions = [
+        "bedrock:InvokeModel",
+        "bedrock:RetrieveAndGenerate",
+        "bedrock:Retrieve",
+      ]
+      resources = ["*"]
+    }
+    marketplace = {
+      effect = "Allow"
+      actions = [
+        "aws-marketplace:ViewSubscriptions",
+        "aws-marketplace:Subscribe",
+      ]
+      resources = ["*"]
+    }
+    sqs = {
+      effect = "Allow"
+      actions = [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+      ]
+      resources = [aws_sqs_queue.events.arn]
+    }
+  }
+
+  event_source_mapping = {
+    sqs = {
+      event_source_arn        = aws_sqs_queue.events.arn
+      function_response_types = ["ReportBatchItemFailures"]
+    }
+  }
+
+  cloudwatch_logs_retention_in_days = 14
+}
